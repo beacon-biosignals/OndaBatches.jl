@@ -33,12 +33,7 @@ jobs:
           path: ~/.julia/artifacts
           key: ${{ runner.os }}-docs-artifacts-${{ hashFiles('**/Project.toml') }}
           restore-keys: ${{ runner.os }}-docs-artifacts
-      - name: Install dependencies
-        run: |
-          julia --project=docs/ -e 'using Pkg;
-              Pkg.develop(PackageSpec(path=pwd()));
-              Pkg.instantiate()'
+      - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-docdeploy@releases/v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
-          PYTHON: ""
