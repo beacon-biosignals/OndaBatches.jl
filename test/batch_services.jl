@@ -219,7 +219,7 @@ unwrap(e::CapturedException) = unwrap(e.ex)
             # we want to test what happens when a worker dies and needs to be
             # replaced...
 
-            # first, make sure taht we CAN remove a worker and get reasonable
+            # first, make sure that we CAN remove a worker and get reasonable
             # behavior...
             batches = RandomBatches(; labeled_signals,
                                     signal_weights=nothing,

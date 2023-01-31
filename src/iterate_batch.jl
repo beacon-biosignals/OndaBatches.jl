@@ -3,7 +3,7 @@
 
 An iterator of pseudo-randomly sampled batches derived from a table of densely labeled signals (a [`labeled.signal@1`](@ref LabeledSignal) table).
 Batches consist of `batch_size` "batch items".
-A single batch item consists of `batch_duration * label_sample_rate` labels, and `batch_duration * signal_sample_rate` samples of multichannel EEG data.
+A single batch item consists of `batch_duration * label_sample_rate` labels, and `batch_duration * signal_sample_rate` samples of multichannel data.
 
 Batch items are sampled according
 to the following procedure:
