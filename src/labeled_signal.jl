@@ -298,10 +298,13 @@ function int_encode_labels(stages, spans;
     # iterate through the spans/stages and undo the RLE
     labels = UInt8[]
     for (span, stage) in zip(spans, stages)
-        # XXX: this is necessary to "snap" some spans that all start/end at like 995ms.  it
+        # XXX: this may be necessary to "snap" some spans that all start/end at like 995ms.  it
         # may cause some very slight misalignment between the processed label
         # spans and the source, but by no more than 500 ms (and in practice,
         # more like 5ms) out of 30s (so ~1% max).
+        #
+        # note that we now DEFAULT to no rounding; this is still included to
+        # preserve backwards compatibility with older versions
         dur = round(duration(span), roundto)
         n = Nanosecond(dur) ÷ Nanosecond(epoch)
         i = encoding[stage]
