@@ -5,7 +5,7 @@
 
 Type alias for a Legolas Row that represents one Onda signal with associated
 labels.  Labels must be dense and contiguous, and are represented as
-Onda.Samples or an Onda.Signal that referes to Onda.Samples serialized as LPCM.
+Onda.Samples or an Onda.Signal that refers to Onda.Samples serialized as LPCM.
 `label_span` corresponds to the time span (relative to the recording) spanned by
 the `labels`.
 
