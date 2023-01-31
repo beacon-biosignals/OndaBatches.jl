@@ -117,7 +117,7 @@ function iterate_batch_item(batches::RandomBatches, rng)
     batch_label_span = sample_label_span(rng, labels, label_span,
                                          label_weights, batch_duration)
 
-    # TODO: #17
+    # TODO: #5
     batch_channels = if n_channels === nothing
         channels
     else
