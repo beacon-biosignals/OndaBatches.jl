@@ -118,7 +118,7 @@ end
 
 function _local_reset!(pool::AbstractWorkerPool)
     # clean out existing workers so that we're not double-put!ing workers into
-    # the channel.  we work directly with teh channel to work around
+    # the channel.  we work directly with the channel to work around
     # https://github.com/JuliaLang/julia/issues/48255
     while isready(pool.channel)
         take!(pool.channel)
