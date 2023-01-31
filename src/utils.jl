@@ -3,6 +3,10 @@
 
 Implement method needed for Onda to read a byte range from an S3 path.  Uses
 `AWSS3.s3_get` under the hood.
+
+!!! note
+    This is technically type piracy, but neither Onda nor AWSS3 makes sense to 
+    house this method so until such a package exists, here it shall remain.
 """
 function Onda.read_byte_range(path::S3Path, byte_offset, byte_count)
     # s3_get byte_range is 1-indexed, so we need to add one
