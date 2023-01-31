@@ -27,7 +27,7 @@ Onda = "0.15"
 StableRNGs = "1"
 StatsBase = "0.33"
 Tables = "1.7"
-TimeSpans = "0.2.9, 0.3"
+TimeSpans = "0.3"
 julia = "1.7"
 
 [extras]
