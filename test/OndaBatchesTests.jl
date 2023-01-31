@@ -32,7 +32,7 @@ const SLEEP_STAGE_INDEX = Dict(s => UInt8(i)
                                for (i, s)
                                in enumerate(VALID_STAGES))
 
-const TEST_ROOT = joinpath(S3Path("s3://beacon-test-sandbox/ondabatches-ci/tmp"),
+const TEST_ROOT = joinpath(S3Path("s3://beacon-public-oss/ondabatches-ci/tmp"),
                            string(uuid4()))
 
 atexit() do
