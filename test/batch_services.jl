@@ -127,7 +127,7 @@ unwrap(e::CapturedException) = unwrap(e.ex)
             new_status = Future()
             put!(new_status, :running)
             batcher.status = new_status
-            # ...and then close teh channel
+            # ...and then close the channel
             batcher.channel = RemoteChannel(() -> Channel{Any}(Inf))
             close(batcher.channel)
             # ...and then attempt to take!
