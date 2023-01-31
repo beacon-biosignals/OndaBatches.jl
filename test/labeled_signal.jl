@@ -395,7 +395,7 @@
             @test_throws ArgumentError load_labeled_signal(shifted_sig_err)
 
             # lop off first 10s of labels since there's no samples data for
-            # them after shiften teh signal span up by 10s
+            # them after shifting the signal span up by 10s
             labels_drop10 = filter(:span => >=(Second(10)) ∘ start,
                                    DataFrame(labels))
             shifted_sig = only(label_signals([shifted_signal],

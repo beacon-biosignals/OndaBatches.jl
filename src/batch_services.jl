@@ -157,7 +157,7 @@ function start_batching(channel::RemoteChannel, batches, state, workers)
         end
     end
 
-    # this will ensure that the jobs channel is closed when teh feeder task
+    # this will ensure that the jobs channel is closed when the feeder task
     # completes AND forward any errors thrown on the feeder task to anyone
     # waiting on `jobs` (i.e. the main loop below)
     bind(jobs, feeder)

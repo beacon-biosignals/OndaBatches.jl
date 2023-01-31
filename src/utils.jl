@@ -136,7 +136,7 @@ function _local_reset!(pool::AbstractWorkerPool)
 end
 
 # there isn't a Base.wait method for worker pools.  `take!` blocks but removes a
-# worker and we don't want that.  teh workaround here is to `wait` on the
+# worker and we don't want that.  the workaround here is to `wait` on the
 # `.channel` field, which is consistent with the docs description of relying on
 # a `.channel` field for fallback implementations of the API methods like
 # `take!`:

@@ -52,7 +52,7 @@ const signals = DataFrame(Legolas.read(signals_path); copycols=true)
 const uncompressed_signals = DataFrame(Legolas.read(uncompressed_signals_path); copycols=true)
 const stages = DataFrame(Legolas.read(stages_path); copycols=true)
 
-# this gets used all over teh place so we'll just do it once here and avoid
+# this gets used all over the place so we'll just do it once here and avoid
 # repetition
 const labeled_signals = label_signals(uncompressed_signals,
                                       sort(stages, order(:span; by=start));
