@@ -181,8 +181,12 @@ start!(batcher, RNG)
 @test size(X3) == size(X)
 @test size(Y3) == size(Y)
 
+# A more convenient way to do this is to just take! from the batcher.channel, which obviates
+# the need for passing around the new_state
+((X4, Y4), new_state), old_state = take!(batcher.channel)
 
-# TODO: example of running this distributed
+fs = [@spawnat :any take!(batcher.channel) for _ in 1:15]
+results = fetch.(fs)
 
 stop!(batcher)
 @test get_status(batcher) == :stopped
