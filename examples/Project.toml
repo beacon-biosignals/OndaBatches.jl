@@ -1,7 +1,0 @@
-[deps]
-CleanSleepUtils = "08a1a5c8-e46d-452c-8c36-aa237cd13379"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Onda = "e853f5be-6863-11e9-128d-476edb89bfb5"
-OndaBatches = "181bd894-5b11-491a-bec3-9b1779d96000"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-TimeSpans = "bb34ddd2-327f-4c4a-bfb0-c98fc494ece1"
