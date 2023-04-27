@@ -2,17 +2,16 @@
 CurrentModule = OndaBatches
 ```
 
-# API
+# Public API
 
-## Batching service
+## Labeled signals
 
 ```@docs
-Batcher
-Batcher(::Int, ::AbstractWorkerPool, ::Any; start::Any, state::Any, buffer::Any)
-Base.take!(::Batcher, state)
-start!
-stop!
-get_status
+LabeledSignalV2
+sub_label_span
+label_signals
+load_labeled_signal
+store_labels
 ```
 
 ## Batch sampling
@@ -32,14 +31,15 @@ materialize_batch
 get_channel_data
 ```
 
-## Labeled signals
+## Batching service
 
 ```@docs
-LabeledSignalV2
-sub_label_span
-label_signals
-load_labeled_signal
-store_labels
+Batcher
+Batcher(::Int, ::AbstractWorkerPool, ::Any; start::Any, state::Any, buffer::Any)
+Base.take!(::Batcher, state)
+start!
+stop!
+get_status
 ```
 
 ## Internal utilities
