@@ -135,15 +135,22 @@ function get_labels(labels::SignalV2, span_relative_to_recording)
 end
 
 """
-    label_signals(signals, annotations; groups=:recording, kwargs...)
+    label_signals(signals, annotations;
+                    groups=:recording,
+                    labels_column,
+                    epoch,
+                    encoding,
+                    roundto=nothing)
 
 Create a "labeled signals" table from a signals table and a table of annotations
 containing labels.
 
-Annotations will be passed to [`labels_to_samples_table`](@ref) and additional
-kwargs are forwarded there as well.  Default values there are
-- `labels_column` the column in the annotations table with labels,
-- `epoch` the sampling period of the labels
+Keyword arguments:
+- `groups`: the column to group over, defaults to `:recording`.
+- `labels_column`: the column in the annotations table containing the labels.
+- `epoch`: the sampling period of the labels.
+- `encoding::Dict`: the label -> `UInt8` mapping to use for encoding the labels.
+- `roundto`: controls rounding of "shaggy spans", defaults to `nothing` for no rounding.
 
 Annotations must be
 - contiguous and non-overlapping (withing `groups`)
@@ -158,8 +165,18 @@ data represented by the _signal_.
 If any label span is not entirely contained within the corresponding signal
 span, this will throw an ArgumentError.
 """
-function label_signals(signals, annotations; groups=:recording, kwargs...)
-    labels_table = labels_to_samples_table(annotations; groups, kwargs...)
+function label_signals(signals, annotations;
+                        groups=:recording,
+                        labels_column,
+                        epoch,
+                        encoding,
+                        roundto=nothing)
+    labels_table = labels_to_samples_table(annotations;
+                                            groups,
+                                            labels_column,
+                                            epoch,
+                                            encoding,
+                                            roundto)
     joined = leftjoin(DataFrame(signals), labels_table; on=groups)
     if any(ismissing, joined.labels)
         missings = select(filter(:labels => ismissing, joined), groups)
