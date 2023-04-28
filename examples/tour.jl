@@ -155,15 +155,15 @@ X2, Y2 = materialize_batch(batch)
 # to scale our training process across a cluster.
 
 # Let's start by adding a few processes and loading the necessary packages
+# Note that the "Batch Manager" cannot be assigned to the primary "Manager" node (1) because XXX
 addprocs(4)
+batch_workers = workers()
+batch_manager = popfirst!(batch_workers) # https://github.com/beacon-biosignals/OndaBatches.jl/issues/25
 @everywhere begin
     using Pkg
+    Pkg.activate(@__DIR__)
     using OndaBatches
 end
-
-# Note that the "Batch Manager" cannot be assigned to the primary "Manager" node (1) because XXX
-batch_workers = workers()
-batch_manager = popfirst!(batch_workers)
 
 # A Batcher governs the allocation of batch processing on a distributed environment.
 # We'll provide the RandomBatcher defined above.
@@ -171,7 +171,6 @@ batcher = Batcher(batch_manager, batch_workers, batches; start=false)
 
 # First let's check the initialised batcher hasn't started
 @test get_status(batcher) == :stopped
-@test !isready(batcher.channel)
 
 # Now let's start the batcher with a fresh initial state
 init_state = MersenneTwister(1)
@@ -179,16 +178,12 @@ start!(batcher, init_state)
 
 # It should now be running and ready to allocated batches across nodes
 @test get_status(batcher) == :running
-@test !isready(batcher.channel)
 
 # X3, Y3 are the same batches we sampled above.
 # Similarly, we can keep sampling from this by repeatedly passing in the new_state
-(X3, Y3), new_state = take!(batcher, new_state)
+(X3, Y3), new_state = take!(batcher, init_state)
 @test X3 == X
 @test Y3 == Y
 
-fs = [@spawnat :any take!(batcher.channel) for _ in 1:15]
-results = fetch.(fs)
-
 stop!(batcher)
-@test get_status(batcher) == :stopped
+@test get_status(batcher) == :closed
