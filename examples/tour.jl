@@ -187,3 +187,51 @@ start!(batcher, init_state)
 
 stop!(batcher)
 @test get_status(batcher) == :closed
+
+###
+### A Realistic Example
+###
+
+# In practice, a batcher is launched from a process performing some computationally heavy
+# task, such as training a neural network. Meanwhile, the batch_manager is run on a
+# lightweight process that simply constructs the batches and allocates them to high-RAM
+# batch_workers who materialize and store the associated data.
+# The training worker then `takes!` these batches in sequence and updates the model based on
+# the data + labels.
+# In summary: a typical architecture for using this package might involve:
+# - 1 root process
+# - 1 train_worker GPU
+# - N batch_worker CPUs
+# - 1 batch_manager CPU
+
+# spawn the training worker and allocate any resources it needs to train the model
+train_worker = only(addprocs(1))
+@everywhere train_worker begin
+    using OndaBatches
+    using Random
+end
+
+# Restart the batcher...
+init_state = MersenneTwister(1)
+start!(batcher, init_state)
+
+# Issue a remotecall to `train_worker` which will serialize the code inside the do-block.
+# In practice, this would be training a model but as a MWE we'll instead just compute a
+# statistic on the batch results.
+model_fut = remotecall(train_worker, batcher) do batcher
+    results = Float64[]  # placeholder for some initialized model
+    batch_state = init_state
+    for batch_i in 1:10
+        (x, y), batch_state = take!(batcher, batch_state)
+        # Here we would implement a function that trains the model based on data + labels.
+        # Instead we just push to the results vector to simulate it.
+        push!(results, sum(x))
+    end
+    return results
+end
+
+# We can now fetch the result of the Future returned by the remotecall
+model = fetch(model_fut)
+@test model isa Vector{Float64}
+
+stop!(batcher)
