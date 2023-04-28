@@ -37,11 +37,11 @@ using Random
 using Test
 using TimeSpans
 
-const RNG = MersenneTwister(1)
 const VALID_STAGES = ("wake", "nrem1", "nrem2", "nrem3", "rem", "no_stage")
 const SLEEP_STAGE_INDEX = Dict(s => UInt8(i)
                                for (i, s)
-                               in enumerate(VALID_STAGES))
+                               in
+                               enumerate(VALID_STAGES))
 
 # Load the necessary signals and annotations tables
 include("test/testdataset.jl")
@@ -67,10 +67,10 @@ annotations = sort_and_trim_spans(annotations, :recording; epoch=Second(30))
 # Also removes :stage in favour of adding :labels, which get encoded as above and stored as
 # onda.samples, and :label_span.
 labeled_signals = label_signals(signals,
-                                annotations,
-                                labels_column=:stage,
-                                encoding=SLEEP_STAGE_INDEX,
-                                epoch=Second(30))
+    annotations,
+    labels_column=:stage,
+    encoding=SLEEP_STAGE_INDEX,
+    epoch=Second(30))
 
 @test eltype(labeled_signals.labels) <: Onda.Samples
 @test eltype(labeled_signals.label_span) <: Vector{TimeSpan}
@@ -110,8 +110,9 @@ s1, l1 = load_labeled_signal(labeled_signals[1, :])
 batches = RandomBatches(labeled_signals, nothing, nothing, 1, 3, Second(60))
 
 # We can now draw down batches of samples from the RandomBatches
-# Calling iterate_batch returns a batch item and the new state of the RNG after iterating once.
-item, new_state = iterate_batch_item(batches, RNG)
+# Calling iterate_batch returns a batch item and the new state after iterating once.
+init_state = MersenneTwister(1)
+item, new_state = iterate_batch_item(batches, init_state)
 @test item isa BatchItemV2
 @test new_state isa AbstractRNG
 
@@ -124,17 +125,23 @@ x, y = materialize_batch_item(item)
 @test size(y) == (1, 2)    # 2 labels, one for each 30 second segment
 
 # Additionally, we can draw down the entire batch at once
-batch, new_state = iterate_batch(batches, RNG)
+init_state = MersenneTwister(1)
+batch, new_state = iterate_batch(batches, init_state)
 X, Y = materialize_batch(batch)
 @test size(X) == (1, 7680, 3)  # we now draw 3 samples and concatenate along the 3rd dimension
 @test size(Y) == (1, 2, 3)
+
+# Since we provided the same initial state - the first items in X and Y are x and y above.
+@test X[1] == x
+@test Y[1] == y
 
 # Note that we can continue to draw as many batches as we like by repeatedly passing the
 # new_state back to iterate_batch, much like Julia's Iterator interface
 # https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration
 # In this way, we can dynamically allocate and load batches of data depending on the needs
 # of the model and infrastructure resources that are available.
-batch, new_state = iterate_batch(batches, RNG)
+init_state = MersenneTwister(1)
+batch, new_state = iterate_batch(batches, init_state)
 X2, Y2 = materialize_batch(batch)
 @test X2 != X
 @test Y2 != Y
@@ -160,16 +167,15 @@ batch_manager = popfirst!(batch_workers)
 
 # A Batcher governs the allocation of batch processing on a distributed environment.
 # We'll provide the RandomBatcher defined above.
-batcher = Batcher(batch_manager, batch_workers, batches; start=false, state=RNG)
+batcher = Batcher(batch_manager, batch_workers, batches; start=false)
 
 # First let's check the initialised batcher hasn't started
 @test get_status(batcher) == :stopped
 @test !isready(batcher.channel)
 
-# Now let's start the batcher - but given we already used the RandomBatcher previously, we
-# need to provide the correct new_state
-# XXX: why does it work if we use state=RNG above? why do we need to do this twice?
-start!(batcher, RNG)
+# Now let's start the batcher with a fresh initial state
+init_state = MersenneTwister(1)
+start!(batcher, init_state)
 
 # It should now be running and ready to allocated batches across nodes
 @test get_status(batcher) == :running
@@ -177,7 +183,7 @@ start!(batcher, RNG)
 
 # X, Y are the collection of training / evaluation data as above
 # Similarly, we can keep sampling from this by repeatedly passing in the new_state
-(X3, Y3), new_state = take!(batcher, RNG)
+(X3, Y3), new_state = take!(batcher, new_state)
 @test size(X3) == size(X)
 @test size(Y3) == size(Y)
 
