@@ -181,11 +181,11 @@ start!(batcher, init_state)
 @test get_status(batcher) == :running
 @test !isready(batcher.channel)
 
-# X, Y are the collection of training / evaluation data as above
+# X3, Y3 are the same batches we sampled above.
 # Similarly, we can keep sampling from this by repeatedly passing in the new_state
 (X3, Y3), new_state = take!(batcher, new_state)
-@test size(X3) == size(X)
-@test size(Y3) == size(Y)
+@test X3 == X
+@test Y3 == Y
 
 # A more convenient way to do this is to just take! from the batcher.channel, which obviates
 # the need for passing around the new_state
