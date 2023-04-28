@@ -187,10 +187,6 @@ start!(batcher, init_state)
 @test X3 == X
 @test Y3 == Y
 
-# A more convenient way to do this is to just take! from the batcher.channel, which obviates
-# the need for passing around the new_state
-((X4, Y4), new_state), old_state = take!(batcher.channel)
-
 fs = [@spawnat :any take!(batcher.channel) for _ in 1:15]
 results = fetch.(fs)
 
