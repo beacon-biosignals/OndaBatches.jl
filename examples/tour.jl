@@ -43,7 +43,8 @@ const SLEEP_STAGE_INDEX = Dict(s => UInt8(i)
                                in
                                enumerate(VALID_STAGES))
 
-# Load the necessary signals and annotations tables
+# Load the necessary signals and annotations tables - you may have to edit this file path
+# depending where your instantiated project directory is.
 include("test/testdataset.jl")
 
 signals = DataFrame(Legolas.read(uncompressed_signals_path))
@@ -91,8 +92,8 @@ s1, l1 = load_labeled_signal(labeled_signals[1, :])
 # have been assigned, we want to be able to prescribe and load batches of these data for
 # training and evaluating a machine learning learning model.
 #
-# The RandomBatches type specifies how to iteratively sample from a collection of labeled
-# signals to generate these batches in pseudo-random, iterable fashion.
+# The RandomBatches type specifies one possible iteration scheme for sampling from a
+# collection of labeled signals to generate these batches in pseudo-random fashion.
 #
 # Specifically, RandomBatches constructs batches via the following mechanism:
 # - randomly sample over the signals
