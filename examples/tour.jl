@@ -74,7 +74,7 @@ labeled_signals = label_signals(signals,
     epoch=Second(30))
 
 @test eltype(labeled_signals.labels) <: Onda.Samples
-@test eltype(labeled_signals.label_span) <: Vector{TimeSpan}
+@test eltype(labeled_signals.label_span) <: TimeSpan
 
 # We can now load and inspect the underlying Samples data for one of our labeled signals.
 # This is given as a tuple of Samples: one for the signal and the other the labels.
@@ -133,16 +133,15 @@ X, Y = materialize_batch(batch)
 @test size(Y) == (1, 2, 3)
 
 # Since we provided the same initial state - the first items in X and Y are x and y above.
-@test X[1] == x
-@test Y[1] == y
+@test X[:, :, 1] == x
+@test Y[:, :, 1] == y
 
 # Note that we can continue to draw as many batches as we like by repeatedly passing the
 # new_state back to iterate_batch, much like Julia's Iterator interface
 # https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration
 # In this way, we can dynamically allocate and load batches of data depending on the needs
 # of the model and infrastructure resources that are available.
-init_state = MersenneTwister(1)
-batch, new_state = iterate_batch(batches, init_state)
+batch, new_state = iterate_batch(batches, new_state)
 X2, Y2 = materialize_batch(batch)
 @test X2 != X
 @test Y2 != Y
