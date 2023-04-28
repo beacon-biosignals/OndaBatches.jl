@@ -181,7 +181,6 @@ X2, Y2 = materialize_batch(batch)
 # to scale our training process across a cluster.
 
 # Let's start by adding a few processes and loading the necessary packages
-# Note that the "Batch Manager" cannot be assigned to the primary "Manager" node (1) because XXX
 addprocs(4)
 batch_workers = workers()
 batch_manager = popfirst!(batch_workers) # https://github.com/beacon-biosignals/OndaBatches.jl/issues/25
