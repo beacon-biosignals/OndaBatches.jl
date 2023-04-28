@@ -79,10 +79,36 @@ labeled_signals = label_signals(signals,
 # We can now load and inspect the underlying Samples data for one of our labeled signals.
 # This is given as a tuple of Samples: one for the signal and the other the labels.
 # See Onda.jl for working with Samples objects.
-s1, l1 = load_labeled_signal(labeled_signals[1, :])
+ls1 = LabeledSignalV2(labeled_signals[1, :])
+s1, l1 = load_labeled_signal(ls1)
 
 @test s1 isa Samples
 @test l1 isa Samples
+
+# Of note is that a LabeledSignal describes two time spans, both of which are described
+# relative to the _start of the recording_:
+# - `span`: describing the time span of the signal
+# - `label_span`: describing the time span of the labels
+#
+# Note that these spans are not necessarily equal however the signal `span` must entirely
+# encapsulate the `label_span`.
+
+@test overlaps(ls1.span, ls1.label_span)
+
+# It is also possible to select a sub-span of the LabeledSignal.
+# Here we extract a sub-span that starts at 2hrs into the recording and ends at 3hrs.
+sub_span = TimeSpan(Minute(120), Minute(180))
+ls2 = LabeledSignalV2(sub_label_span(ls1, sub_span))
+s2, l2 = load_labeled_signal(ls2)
+
+# XXX: is this a bug? shouldn't signal span also be == sub_span?
+# the size of the data below seems to suggest it should?
+@test ls2.span == ls1.span
+@test ls2.label_span == sub_span
+
+@test size(s1.data, 2) > size(s2.data, 2)
+@test size(l1.data, 2) > size(l2.data, 2)
+
 
 ###
 ### RandomBatches
