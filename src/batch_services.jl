@@ -409,6 +409,15 @@ function start!(batcher::Batcher, state)
         return batcher
     end
 
+    # because of how remotecall works, we need to make a copy of the state when
+    # using the calling PID as the manager: the manager is where we're iterating
+    # batches which could mutate the state, and when remotecalling onto
+    # `myid()`, it functions like a local invocation instead of serializing:
+    # https://docs.julialang.org/en/v1/manual/distributed-computing/#Local-invocations
+    if manager == myid()
+        state = copy(state)
+    end
+
     # it's not really possible to check whether a channel is closed without
     # (possibly) blocking so we just create a new one every time we start.
     channel = RemoteChannel(() -> Channel{Any}(buffer))
