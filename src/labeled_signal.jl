@@ -167,17 +167,17 @@ If any label span is not entirely contained within the corresponding signal
 span, this will throw an ArgumentError.
 """
 function label_signals(signals, annotations;
-                        groups=:recording,
-                        labels_column,
-                        epoch,
-                        encoding,
-                        roundto=nothing)
+                       groups=:recording,
+                       labels_column,
+                       epoch,
+                       encoding,
+                       roundto=nothing)
     labels_table = labels_to_samples_table(annotations;
-                                            groups,
-                                            labels_column,
-                                            epoch,
-                                            encoding,
-                                            roundto)
+                                           groups,
+                                           labels_column,
+                                           epoch,
+                                           encoding,
+                                           roundto)
     joined = leftjoin(DataFrame(signals), labels_table; on=groups)
     if any(ismissing, joined.labels)
         missings = select(filter(:labels => ismissing, joined), groups)
