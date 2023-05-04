@@ -145,7 +145,8 @@ end
 Create a "labeled signals" table from a signals table and a table of annotations
 containing labels.
 
-Keyword arguments:
+Annotations will be passed to [`labels_to_samples_table`](@ref), as well as 
+kwargs.  `labels_to_samples_table` requires these keyword arguments:
 - `groups`: the column to group over, defaults to `:recording`.
 - `labels_column`: the column in the annotations table containing the labels.
 - `epoch`: the sampling period of the labels.
