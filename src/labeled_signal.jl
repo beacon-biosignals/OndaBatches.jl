@@ -65,7 +65,7 @@ function store_labels(labeled_signal::LabeledSignalV2, root; format="lpcm")
 end
 
 """
-    function load_labeled_signal(labeled_signal)
+    function load_labeled_signal(labeled_signal, samples_eltype::Type=Float64)
 
 Load signal data as `Onda.Samples` from a labeled segment of an `Onda.SignalV2` (i.e.,
 a [`LabeledSignalV2`](@ref) or row with schema `"labeled.signal@2"`), and
@@ -74,6 +74,20 @@ along with the corresponding labels (as another `Onda.Samples` object).
 
 If possible, this will only retrieve the bytes corresponding to
 `labeled_signal.label_span`.
+
+The `eltype` of the returned `Samples` is `samples_eltype`, which defaults to
+`Float64`.
+
+!!! note
+
+    The handling of samples `eltype` is different than `Onda.load`, for which
+    the `eltype` depends on the resolution/offset specified in the samples info:
+    when they are 1/0 respectively, the underlying encoded data is _always_
+    returned exactly as-is, even if the type differs from the requested
+    `eltype`.  This allows for some optimizations in such cases, but is a
+    potential footgun when a particular `eltype` is actually required.  We work
+    around this inconsistency here by always allocating a _new_ array with the
+    requested `eltype` to hold the decoded samples.
 
 Returns a `samples, labels` tuple.
 """
