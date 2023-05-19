@@ -85,7 +85,7 @@ The `eltype` of the returned `Samples` is `samples_eltype`, which defaults to
 
 Returns a `samples, labels` tuple.
 """
-function load_labeled_signal(labeled_signal, ::Type{T}=Float64) where {T})
+function load_labeled_signal(labeled_signal, ::Type{T}=Float64) where {T}
     # this fails on an individual row
     Legolas.validate((labeled_signal, ), Legolas.Schema("labeled.signal@1"))
     (; labels, label_span, span) = labeled_signal
