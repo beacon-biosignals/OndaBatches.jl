@@ -1,7 +1,7 @@
 name = "OndaBatches"
 uuid = "181bd894-5b11-491a-bec3-9b1779d96000"
 authors = ["Beacon Biosignals, Inc."]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 AWS = "fbe9abb3-538b-5e4e-ba9e-bc94f4f92ebc"
