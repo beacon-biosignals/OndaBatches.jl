@@ -1,4 +1,4 @@
-@testset "materialize batches" for labed_sigs in (labeled_signals, OndaBatches.store_labels(labeled_signals, TEST_ROOT))
+@testset "materialize batches::$(sample_type)" for labed_sigs in (labeled_signals, OndaBatches.store_labels(labeled_signals, TEST_ROOT)), sample_type in (Float32, Float64)
     # create batches by pulling one minute from each labeled signal
     batches = map(enumerate(Tables.rows(labed_sigs))) do (i, labeled_signal)
         (; label_span, channels) = labeled_signal
@@ -9,12 +9,20 @@
         return Tables.rowmerge(batch_item; batch_channels)
     end
 
-    xys = materialize_batch_item.(batches)
-    x, y = materialize_batch(batches)
+    xys = materialize_batch_item.(batches, sample_type)
+    x, y = materialize_batch(batches, sample_type)
 
     # consistency with the single item form
     @test x == cat(first.(xys)...; dims=3)
     @test y == cat(last.(xys)...; dims=3)
+
+    @test all(==(sample_type) ∘ eltype ∘ first, xys)
+    @test eltype(x) == sample_type
+
+    if sample_type == Float64
+        x_default, _ = materialize_batch(batches)
+        @test x_default == x
+    end
 
     @test size(x) == (2,                                    # channel
                       Dates.value(Second(Minute(1))) * 128, # time
@@ -37,7 +45,7 @@
                                  ConstantSamplesRoundingMode(RoundDown))
         samples = Onda.load(labeled_signal, batch_span)
         chans = channels[mod1.(i:i + 1, length(channels))]
-        @test samples[chans, :].data == x[:, :, i]
+        @test convert.(sample_type, samples[chans, :].data) ≈ x[:, :, i]
         @test labels[:, batch_label_span].data == y[:, :, i]
     end
 
@@ -66,12 +74,12 @@
                 batch_eo = Tables.rowmerge(batch_item;
                                            batch_channels=EvenOdds(),
                                            label_span)
-                x, y = materialize_batch_item(batch_eo)
+                x, y = materialize_batch_item(batch_eo, sample_type)
                 @test size(x) == (length(batch_item.channels) ÷ 2, 128, 2)
                 chans = batch_item.channels
                 chans_e = chans[2:2:end]
                 chans_o = chans[1:2:end]
-                samples, labels = load_labeled_signal(batch_eo)
+                samples, labels = load_labeled_signal(batch_eo, sample_type)
                 @test x[:, :, 1] == samples[chans_e, :].data
                 @test x[:, :, 2] == samples[chans_o, :].data
 
@@ -81,9 +89,9 @@
 
                 # manually construct even channel/odd channel batches and merge
                 batch_e = Tables.rowmerge(batch_eo; batch_channels = chans_e)
-                x_e, y_e = materialize_batch_item(batch_e)
+                x_e, y_e = materialize_batch_item(batch_e, sample_type)
                 batch_o = Tables.rowmerge(batch_eo; batch_channels = chans_o)
-                x_o, y_o = materialize_batch_item(batch_o)
+                x_o, y_o = materialize_batch_item(batch_o, sample_type)
 
                 @test x == cat(x_e, x_o; dims=3)
                 @test y == y_e == y_o
@@ -100,8 +108,8 @@
                 batch_zmc = Tables.rowmerge(batch_item;
                                             batch_channels=zmc,
                                             label_span)
-                samples, _ = load_labeled_signal(batch_zmc)
-                x, y = materialize_batch_item(batch_zmc)
+                samples, _ = load_labeled_signal(batch_zmc, sample_type)
+                x, y = materialize_batch_item(batch_zmc, sample_type)
                 @test size(x) == (length(zmc.channels), 128)
                 for (i, c) in enumerate(zmc.channels)
                     if c ∈ batch_zmc.channels

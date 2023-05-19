@@ -77,7 +77,7 @@ If possible, this will only retrieve the bytes corresponding to
 
 Returns a `samples, labels` tuple.
 """
-function load_labeled_signal(labeled_signal)
+function load_labeled_signal(labeled_signal, ::Type{T}=Float64) where {T}
     # TODO: handle this with a type restriction/validation by construction?
     # Legolas.validate((labeled_signal, ), Legolas.Schema("labeled.signal@2"))
     # (; labels, label_span, span) = labeled_signal
@@ -102,7 +102,14 @@ function load_labeled_signal(labeled_signal)
     aligned = AlignedSpan(sample_rate,
                           label_span_relative_to_samples,
                           ConstantSamplesRoundingMode(RoundDown))
-    samples = Onda.load(labeled_signal, aligned)
+
+    # load samples encoded, and then decode them to our desired eltype
+    samples = Onda.load(labeled_signal, aligned; encoded=true)
+    # why this juggling?  well, if the resolution/offset of samples is 1/0
+    # respectively, then `decode` is a no-op, EVEN IF `T !=
+    # eltype(samples.data)`.  By providing the storage array to `decode!`, we
+    # force conversion to T.
+    samples = Onda.decode!(similar(samples.data, T), samples)
 
     # return labels as-is if they are Samples, and load/index appropriately if
     # they are a Lazy Signal
