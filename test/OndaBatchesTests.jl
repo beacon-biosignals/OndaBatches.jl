@@ -82,14 +82,10 @@ struct ZeroMissingChannels
     channels::Vector{String}
 end
 function OndaBatches.get_channel_data(samples::Samples, channels::ZeroMissingChannels)
-    out = zeros(eltype(samples.data),
-                length(channels.channels),
-                size(samples.data, 2))
+    out = zeros(eltype(samples.data), length(channels.channels), size(samples.data, 2))
     for (i, c) in enumerate(channels.channels)
         if c ∈ samples.info.channels
-            # XXX: this is extraordinarly inefficient and makes lots of copies,
-            # it's just here for demonstration
-            out[i, :] .= samples[c, :].data[1, :]
+            @views out[i:i, :] .= samples[c, :]
         end
     end
     return out

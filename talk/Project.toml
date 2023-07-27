@@ -1,0 +1,7 @@
+[deps]
+AWSS3 = "1c724243-ef5b-51ab-93f4-b0a88ac62a95"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Legolas = "741b9549-f6ed-4911-9fbf-4a1c0c97f0cd"
+Onda = "e853f5be-6863-11e9-128d-476edb89bfb5"
+OndaBatches = "181bd894-5b11-491a-bec3-9b1779d96000"
+Remark = "79b45036-8e38-5d04-8f49-b9fb23ff5a0d"
