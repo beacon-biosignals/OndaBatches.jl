@@ -1,9 +1,9 @@
-# prepare a totally local test dataset in case of internet issues
+using AWSS3
+using Legolas: @schema, @version
+using Onda
+using OndaBatches
 
-using Legolas, DataFrames, AWSS3, Onda
-using AWSS3: Path
-
-include("../test/testdataset.jl")
+include(joinpath(@__DIR__, "../test/testdataset.jl"))
 local_root = joinpath(@__DIR__, "data")
 
 local_signals_path = joinpath(local_root, "signals.arrow")
@@ -27,10 +27,20 @@ end
 local_stages_path = joinpath(local_root, "stages.arrow")
 if !isfile(local_stages_path)
     cp(stages_path, Path(local_stages_path))
+    stages = DataFrame(Legolas.read(local_stages_path); copycols=true)
+    stages = OndaBatches.sort_and_trim_spans(stages, :recording; epoch=Second(30))
+    Legolas.write(local_stages_path, stages, SleepStageV1SchemaVersion())
 end
 
-function load_tables()
+function load_tables(; strip_refs=true)
     signals = DataFrame(Legolas.read(local_signals_path); copycols=true)
+    if strip_refs
+        transform!(signals,
+                   :channels => ByRow() do channels
+                       [string(first(split(c, "-"; limit=2))) for c in channels]
+                   end => :channels)
+    end
+        
     stages = DataFrame(Legolas.read(local_stages_path); copycols=true)
     return signals, stages
 end

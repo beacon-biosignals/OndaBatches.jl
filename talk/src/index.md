@@ -81,10 +81,13 @@ batches = RandomBatches(; labeled_signals,
 
 state0 = StableRNG(1)
 
-# NB for RandomBatches, `state === state0` if we don't copy!
 batch, state = iterate_batch(batches, deepcopy(state0))
 x, y = materialize_batch(batch)
 ```
+
+???
+
+live demo here...
 
 ---
 

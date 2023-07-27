@@ -85,7 +85,7 @@ function OndaBatches.get_channel_data(samples::Samples, channels::ZeroMissingCha
     out = zeros(eltype(samples.data), length(channels.channels), size(samples.data, 2))
     for (i, c) in enumerate(channels.channels)
         if c ∈ samples.info.channels
-            @views out[i:i, :] .= samples[c, :]
+            @views out[i:i, :] .= samples[c, :].data
         end
     end
     return out
