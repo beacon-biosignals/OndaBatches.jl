@@ -1,15 +1,13 @@
-# motivation
+# motivation: build batches for ML
 
-build batches for ML
+multi-channel time series data
 
-multi-channel time series data, "image segmentation"; target is regularly
-sampled labels (i.e., every 30s span gets a label)
+"image segmentation": target is regularly sampled labels (i.e., every 30s span
+gets a label)
 
-onda-formatted data `Samples`
+input data is onda-formatted `Samples` + annotations (time span + label)
 
-transform into tensors that get fed into whichever ML model you want
-
-"batches" (stack single sample tensors)
+need to transform into tensors that get fed into ML models
 
 ---
 
@@ -39,6 +37,21 @@ in distributed systems to use
 
 ---
 
+# design: goals
+
+distributed (cloud native, throw more resources at it to make sure data movement
+is not the bottleneck)
+
+scalable (handle out-of-core datasets, both for signal data and labels)
+
+deterministic + reproducible (pseudo-random)
+
+resumable
+
+flexible and extensible via normal Julia mechanisms of multiple dispatch
+
+---
+
 # design
 
 separate the _cheap_ parts where _order matters_ ("batch specification") from
@@ -46,13 +59,19 @@ _expensive parts_ which can be done _asynchronously_ ("batch materialization")
 
 --
 
-use [Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) to define
-interfaces via schemas (which extend
-[Onda.jl](https://github.com/beacon-biosignals/Onda.jl) schema for Signal).
+build on standard Beacon tooling, using
+[Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) to define
+interface schemas which extend
+[Onda.jl](https://github.com/beacon-biosignals/Onda.jl) schemas.
 
 --
 
 use _iterator patterns_ to generate pseudorandom sequence of batch specs.
+
+--
+
+be flexible enough that it can be broadly useful across different ML efforts at
+Beaacon (and beyond??)
 
 --
 
@@ -62,7 +81,7 @@ batch tensor)
 
 ---
 
-# implementation/examples
+# implementation/examples: local batching
 
 ```julia
 signals, labels = load_tables()
