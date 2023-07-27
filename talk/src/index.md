@@ -48,11 +48,11 @@ _expensive parts_ which can be done _asynchronously_ ("batch materialization")
 
 use [Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) to define
 interfaces via schemas (which extend
-[Onda.jl](https://github.com/beacon-biosignals/Onda.jl) schema for Signal)
+[Onda.jl](https://github.com/beacon-biosignals/Onda.jl) schema for Signal).
 
 --
 
-use _iterator patterns_ to generate the sequences of batch specs.
+use _iterator patterns_ to generate pseudorandom sequence of batch specs.
 
 --
 
@@ -132,9 +132,9 @@ end
 
 ---
 
-# distributed batch loading
+# distributed batch loading: why
 
-why?  different models have different demands on batch loading (data size,
+different models have different demands on batch loading (data size,
 amount of preprocessing required, etc.)
 
 batch loading should _never_ be the bottleneck in our pipeline (GPU time is
@@ -149,6 +149,114 @@ distributing batch loading means we can always "throw more compute" at it
 another thing: working around flakiness of multithreading and unacceptably low
 throughput for S3 reads.  worker-to-worker communication has good enough
 throughput
+
+---
+
+# distributed batch loading: how
+
+step 1: `return` → `RemoteChannel`
+
+```julia
+start_batching(channel, batches, state)
+    try
+        while true
+            batch, state = iterate_batch(batches, state)
+            xy = materialize_batch(batch)
+            put!(channel, (xy, copy(state)))
+        end
+    catch e
+        if is_channel_closed(e)
+            @info "channel closed, stopping batcher..."
+            return :closed
+        else
+            rethrow()
+        end
+    end
+end
+
+init_state = StableRNG(1)
+# need a buffered channel in order for producers to stay ahead
+channel = RemoteChannel(() -> Channel{Any}(10))
+batch_worker = addprocs(1)
+future = remotecall(start_batching!, batch_worker, batches, channel, init_state)
+# now consumer can `take!(channel)` to retrieve batches when they're ready
+```
+
+???
+
+the basic idea is that instead of calling a function `materialize_batch ∘
+iterate_batch`, we will instead make a _service_ that feeds materialized batches
+and the corresponding batcher states onto a `Distributed.RemoteChannel` where a
+consumer can retrieve them.
+
+of course, this still loads batches in serial, one at a time.  if we didn't care
+about the order of the batches or reproducibility, we could just start multiple
+independent feeder processes to feed the channel.
+
+---
+
+# distributed batch loading: how
+
+step 2: load multiple batches at the same time
+
+need to be careful to make sure the _order of batches_ is the same regardless of
+the number of workers etc.
+
+this is where the separation between batch _specification_ and batch
+_materialization_ pays off: the specifications are small and cheap to
+produce/serialize, so we can do them sequentially on the "manager" process.
+
+```julia
+function pmap_batches!(channel::RemoteChannel, spec, state, workers)
+    futures_states = map(workers) do worker
+        batch, state = iterate_batch(spec, state)
+        batch_future = remotecall(materialize_batch, worker, batch)
+        return batch_future, copy(state)
+    end
+
+    for (future, s) in futures_states
+        xy = fetch(future)
+        put!(channel, (xy, s))
+    end
+
+    return state
+end
+```
+
+(note this doesn't quite work when you have _finite_ series of batches)
+
+???
+
+cycle through the workers one at a time, feeding them a batch spec.
+
+---
+
+# distributed batch loading: how
+
+step 2: load multiple batches at the same time
+
+```julia
+function pmap_batches!(channel::RemoteChannel, spec, state, workers)
+    # ...
+end
+
+function start_batching(channel::RemoteChannel, spec, state, workers)
+    try
+        while true
+            state = pmap_batches!(channel, spec, state, workers)
+        end
+    catch e
+        if is_closed_ex(e)
+            @info "batch channel closed, batching stopped"
+            return :closed
+        else
+            rethrow(e)
+        end
+    end
+end
+```
+
+---
 
 # batching service
 
