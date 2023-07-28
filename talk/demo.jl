@@ -20,11 +20,13 @@ const SLEEP_STAGE_INDEX = Dict(s => UInt8(i)
 #####
 
 signals, labels = load_tables(; strip_refs=true);
+
+# input signal data (X)
 signals
 describe(signals, :eltype, :first)
-
 samples = Onda.load(first(signals))
 
+# input label data (Y)
 describe(labels, :eltype, :first)
 
 labeled_signals = label_signals(signals, labels, 
@@ -43,7 +45,6 @@ batches = RandomBatches(; labeled_signals,
                         batch_duration=Minute(5))
 
 state0 = StableRNG(1)
-
 batch, state = iterate_batch(batches, deepcopy(state0))
 describe(batch, :eltype, :first)
 
@@ -100,7 +101,7 @@ function OndaBatches.get_channel_data(samples::Samples, channels::ZeroMissingCha
     return out
 end
 
-channels = ZeroMissingChannels(["c3", "c4", "o1", "o2"])
+channels = ZeroMissingChannels(["c3", "c4", "o1", "o2", "not-a-real-channel"])
 
 OndaBatches.get_channel_data(samples, channels)
 
@@ -149,3 +150,54 @@ batch_flat = deepcopy(batch)
 batch_flat.batch_channels .= Ref(1:4)
 x_flat, _ = materialize_batch(batch_flat)
 x_flat
+
+#####
+##### batch service
+#####
+
+using Distributed
+# one manager and 3 batch loaders
+addprocs(4)
+
+@everywhere begin
+    using DataFrames
+    using Dates
+    using Legolas
+    using Onda
+    using OndaBatches
+    using StableRNGs
+end
+
+batcher = Batcher(workers(), batches; start=false)
+
+get_status(batcher)
+
+start!(batcher, copy(state0));
+get_status(batcher)
+
+state = copy(state0)
+(x, y), state = take!(batcher, state)
+(x, y), state = take!(batcher, state)
+
+# taking from an out-of-sync state will restart teh batcher
+(x, y), state = take!(batcher, copy(state0))
+
+stop!(batcher)
+get_status(batcher)
+
+# errors get propagated to consumer
+bad_batches = deepcopy(batches)
+bad_batches.labeled_signals.file_path .= "blah blah not a path"
+bad_batcher = Batcher(workers(), bad_batches; start=true, state=copy(state0))
+
+take!(bad_batcher, state0)
+
+# turn on debug logging if you want to see the gory details for debugging
+@everywhere batcher.manager ENV["JULIA_DEBUG"] = "OndaBatches"
+start!(batcher, copy(state0))
+
+# turn on debug logging on the loaders for the _really gory_ details
+stop!(batcher)
+@everywhere ENV["JULIA_DEBUG"] = "OndaBatches"
+start!(batcher, copy(state0))
+

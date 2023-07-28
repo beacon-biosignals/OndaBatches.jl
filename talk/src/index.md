@@ -4,16 +4,14 @@ class: middle
 
 # OndaBatches.jl: Continuous, repeatable, and distributed batching
 
-## Dave Kleinschmidt — [`@kleinschmidt`](https://github.com/kleinschmidt)
+## Dave Kleinschmidt — Beacon Biosignals
 
-### Beacon Biosignals
 ### JuliaCon 2023
-
 ]
 
 ---
 
-# who am I
+# Who am I?
 
 Research Software Engineer at Beacon Biosignals
 
@@ -22,26 +20,53 @@ other quantitative/computational work
 
 ---
 
-# motivation: build batches for ML
+# Who are we?
 
-multi-channel, regularly sampled time series data (i.e., EEG recordings)
+Beacon Biosignals
 
-"image segmentation": target is regularly sampled labels (i.e., every 30s span
-gets a label)
-
-input data is onda-formatted `Samples` + annotations (time span + label)
-
-need to transform into tensors that get fed into ML models
+> From its founding in 2019, Beacon Biosignals has engineered a machine learning
+> platform designed to interrogate large EEG datasets at unprecedented speed and
+> scale.
 
 ---
 
-# why should you care? / who is this for?
+# Why did we make this?
 
-you're a ML engineer looking to model large time-series datasets and want to
-acutally _use_ OndaBatches to build your batches.
+Support common need to _build batches from annotated time series data_ across
+multiple ML efforts at Beacon:
 
-you're developing similar tools and are interested in how we build re-usable
-tools like this at Beacon.
+--
+
+Multi-channel, regularly sampled time series data (i.e., EEG recordings)
+
+Task is "image segmentation": output dense, regularly sampled labels (i.e.,
+every 30s span gets a label)
+
+--
+
+Input data is Onda-formatted `Samples` + annotations (time span + label)
+
+Models requires _numerical tensors_ for training/evaluation/inference
+
+---
+
+# Who is this for?
+
+This might be interesting to you if you are
+
+1. a ML engineer looking to model large time-series datasets and want to
+   acutally _use_ OndaBatches to build your batches.
+2. developing similar tools and are interested in how we build re-usable
+   tools like this at Beacon.
+
+--
+
+## Why might you care?
+
+1. We actually use this at Beacon!
+2. It's a potentially useful example (cautionary tale?) for how to wrangle
+   inconveniently large data and the nuances of distributed computing in a
+   restricted domain
 
 ???
 
@@ -52,60 +77,60 @@ amount of path dependence in how we got to this state...
 
 ---
 
-# outline
+# Outline
 
-Part 1: design, philosophy, and basic functionality
+Part 1: Design, philosophy, and basic functionality
 
-Part 2: making a distributed batch loading system that doesn't require expertise
+Part 2: Making a distributed batch loading system that doesn't require expertise
 in distributed systems to use
 
 ---
 
-# design: goals
+# Design: Goals
 
-distributed (cloud native, throw more resources at it to make sure data movement
-is not the bottleneck)
+Distributed (integrate with our distributed ML pipelines, throw more resources
+at it to make sure data movement is not the bottleneck)
 
-scalable (handle out-of-core datasets, both for signal data and labels)
+Scalable (handle out-of-core datasets, both for signal data and labels)
 
-deterministic + reproducible (pseudo-random)
+Deterministic + reproducible (pseudo-random)
 
-resumable
+Resumable
 
-flexible and extensible via normal Julia mechanisms of multiple dispatch
+Flexible and extensible via normal Julia mechanisms of multiple dispatch
 
 ---
 
-# design
+# Design: Philosophy
 
-separate the _cheap_ parts where _order matters_ ("batch specification") from
+Separate the _cheap_ parts where _order matters_ ("batch specification") from
 _expensive parts_ which can be done _asynchronously_ ("batch materialization")
 
 --
 
-build on standard tooling (at Beacon), using
+Build on standard tooling (at Beacon), using
 [Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) to define
 interface schemas which extend
 [Onda.jl](https://github.com/beacon-biosignals/Onda.jl) schemas.
 
 --
 
-use _iterator patterns_ to generate pseudorandom sequence of batch specs.
+Use _iterator patterns_ to generate pseudorandom sequence of batch specs.
 
 --
 
-be flexible enough that it can be broadly useful across different ML efforts at
+Be flexible enough that it can be broadly useful across different ML efforts at
 Beaacon (and beyond??)
 
 --
 
-use function calls we control to provide hooks for users to customize certain
+Use function calls we control to provide hooks for users to customize certain
 behaviors via multiple dispatch (e.g., how to materialize `Samples` data into
 batch tensor)
 
 ---
 
-# how does it work? demo
+# How does it work?
 
 ```julia
 signals, labels = load_tables()
@@ -134,9 +159,9 @@ live demo here...
 
 ---
 
-# extensibility
+# Extensibility
 
-make sure we always have data from teh same channels, even if they're not
+Make sure we always have data from the same channels, even if they're not
 present in the data (use zeros instead):
 
 ```julia
@@ -157,10 +182,10 @@ end
 
 ---
 
-# extensibility
+# Extensibility
 
-separate even and odd channels into separate "compartments" (so they're
-processed independently in the model)
+A very silly kind of "featurization": separate even and odd channels into
+separate "compartments" (so they're processed independently in the model)
 
 ```julia
 struct EvenOdds end
@@ -175,7 +200,7 @@ end
 
 ---
 
-# distributed batch loading: why
+# Distributed batch loading: Why
 
 different models have different demands on batch loading (data size,
 amount of preprocessing required, etc.)
@@ -195,7 +220,7 @@ throughput
 
 ---
 
-# distributed batch loading: how
+# Distributed batch loading: How
 
 step 1: `return` → `RemoteChannel`
 
@@ -238,14 +263,14 @@ independent feeder processes to feed the channel.
 
 ---
 
-# distributed batch loading: how
+# Distributed batch loading: How
 
-step 2: load multiple batches at the same time
+Step 2: Load multiple batches at the same time
 
-need to be careful to make sure the _order of batches_ is the same regardless of
+Need to be careful to make sure the _order of batches_ is the same regardless of
 the number of workers etc.
 
-this is where the separation between batch _specification_ and batch
+This is where the separation between batch _specification_ and batch
 _materialization_ pays off: the specifications are small and cheap to
 produce/serialize, so we can do them sequentially on the "manager" process.
 
@@ -266,7 +291,7 @@ function pmap_batches!(channel::RemoteChannel, spec, state, workers)
 end
 ```
 
-(note this doesn't quite work when you have _finite_ series of batches)
+(Note this doesn't quite work when you have _finite_ series of batches)
 
 ???
 
@@ -274,9 +299,9 @@ cycle through the workers one at a time, feeding them a batch spec.
 
 ---
 
-# distributed batch loading: how
+# Distributed batch loading: How
 
-step 2: load multiple batches at the same time
+Step 2: Load multiple batches at the same time
 
 ```julia
 function pmap_batches!(channel::RemoteChannel, spec, state, workers)
@@ -301,17 +326,17 @@ end
 
 ---
 
-# batching service
+# Batching service
 
-lots of bookkeeping requried for this!
+Lots of bookkeeping requried for this!
 - `Future` returned by `remotecall(start_batching, ...)`
 - `RemoteChannel` for serving the batches
 - batch iterator itself
 
-what happens when things go wrong??  it's very tricky to get errors to surface
+What happens when things go wrong??  it's very tricky to get errors to surface
 properly and avoid bad states like slient deadlocks
 
-we provide a `Batcher` struct that
+We provide a `Batcher` struct that
 - does the bookkeeping
 - provides a limited API surface to reduce complexity for users...
 - ...and manage complexity for developers/maintainers
