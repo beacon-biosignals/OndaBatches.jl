@@ -35,12 +35,12 @@ describe(labeled_signals, :eltype)
 labeled_signals.labels[1]
 
 batches = RandomBatches(; labeled_signals,
-                        # UNIFORM WEIGHTING OF SIGNALS + LABELS
-                        SIGNAL_WEIGHTS=NOTHING,
-                        LABEL_WEIGHTS=NOTHING,
-                        N_CHANNELS=2,
-                        BATCH_SIZE=3,
-                        BATCH_DURATION=MINUTE(5))
+                        # uniform weighting of signals + labels
+                        signal_weights=nothing,
+                        label_weights=nothing,
+                        n_channels=2,
+                        batch_size=3,
+                        batch_duration=Minute(5))
 
 state0 = StableRNG(1)
 
