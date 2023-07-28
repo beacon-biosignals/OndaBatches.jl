@@ -24,7 +24,7 @@ other quantitative/computational work
 
 # motivation: build batches for ML
 
-multi-channel time series data
+multi-channel, regularly sampled time series data (i.e., EEG recordings)
 
 "image segmentation": target is regularly sampled labels (i.e., every 30s span
 gets a label)
@@ -302,5 +302,22 @@ end
 ---
 
 # batching service
+
+lots of bookkeeping requried for this!
+- `Future` returned by `remotecall(start_batching, ...)`
+- `RemoteChannel` for serving the batches
+- batch iterator itself
+
+what happens when things go wrong??  it's very tricky to get errors to surface
+properly and avoid bad states like slient deadlocks
+
+we provide a `Batcher` struct that
+- does the bookkeeping
+- provides a limited API surface to reduce complexity for users...
+- ...and manage complexity for developers/maintainers
+
+---
+
+# thanks!
 
 
