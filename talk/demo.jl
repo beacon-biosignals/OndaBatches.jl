@@ -19,12 +19,12 @@ const SLEEP_STAGE_INDEX = Dict(s => UInt8(i)
 ##### basic functionality
 #####
 
-signals, labels = load_tables(; strip_refs=true)
+signals, labels = load_tables(; strip_refs=true);
 signals
+describe(signals, :eltype, :first)
 
 samples = Onda.load(first(signals))
 
-describe(signals, :eltype, :first)
 describe(labels, :eltype, :first)
 
 labeled_signals = label_signals(signals, labels, 

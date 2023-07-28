@@ -1,3 +1,27 @@
+class: middle
+
+.slide-title[
+
+# OndaBatches.jl: Continuous, repeatable, and distributed batching
+
+## Dave Kleinschmidt — [`@kleinschmidt`](https://github.com/kleinschmidt)
+
+### Beacon Biosignals
+### JuliaCon 2023
+
+]
+
+---
+
+# who am I
+
+Research Software Engineer at Beacon Biosignals
+
+Our team builds tools for internal users at Beacon doing machine learning and
+other quantitative/computational work
+
+---
+
 # motivation: build batches for ML
 
 multi-channel time series data
@@ -59,7 +83,7 @@ _expensive parts_ which can be done _asynchronously_ ("batch materialization")
 
 --
 
-build on standard Beacon tooling, using
+build on standard tooling (at Beacon), using
 [Legolas.jl](https://github.com/beacon-biosignals/Legolas.jl) to define
 interface schemas which extend
 [Onda.jl](https://github.com/beacon-biosignals/Onda.jl) schemas.
@@ -81,7 +105,7 @@ batch tensor)
 
 ---
 
-# implementation/examples: local batching
+# how does it work? demo
 
 ```julia
 signals, labels = load_tables()
