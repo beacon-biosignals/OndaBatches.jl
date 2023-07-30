@@ -1,9 +1,15 @@
-using DataFrames
-using Dates
-using Legolas
-using Onda
-using OndaBatches
-using StableRNGs
+using Distributed
+# one manager and 3 batch loaders
+addprocs(4)
+
+@everywhere begin
+    using DataFrames
+    using Dates
+    using Legolas
+    using Onda
+    using OndaBatches
+    using StableRNGs
+end
 
 #####
 ##### setup

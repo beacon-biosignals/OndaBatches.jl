@@ -161,8 +161,10 @@ live demo here...
 
 # Extensibility
 
-Make sure we always have data from the same channels, even if they're not
-present in the data (use zeros instead):
+Some models require a specific set of channels to function (a "montage"), but
+recordings don't always have all the required channels.
+
+Here's a "channel selector" to fill in the missing channels with zeros:
 
 ```julia
 struct ZeroMissingChannels
