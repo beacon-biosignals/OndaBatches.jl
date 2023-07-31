@@ -2,7 +2,10 @@
 CurrentModule = OndaBatches
 ```
 
-Watch our [JuliaCon2023 talk on OndaBatches.jl](https://www.youtube.com/live/FIeO1yenQ6Y?feature=share&t=23190)!  ([Slide source and demo](https://github.com/beacon-biosignals/OndaBatches.jl/tree/main/talk/))
+Watch our [JuliaCon2023 talk on
+OndaBatches.jl](https://www.youtube.com/live/FIeO1yenQ6Y?feature=share&t=23190)!
+[Slides](../juliacon2023/)
+([source + demo](https://github.com/beacon-biosignals/OndaBatches.jl/tree/main/talk/))
 
 # Public API
 
