@@ -6,7 +6,7 @@ class: middle
 
 ## Dave Kleinschmidt — Beacon Biosignals
 
-### JuliaCon 2023
+### JuliaCon 2023 — [slide source + demo](https://github.com/beacon-biosignals/OndaBatches.jl/tree/main/talk/)
 ]
 
 ---
