@@ -1,24 +1,3 @@
-"""
-    Onda.read_byte_range(path::S3Path, byte_offset, byte_count)
-
-Implement method needed for Onda to read a byte range from an S3 path.  Uses
-`AWSS3.s3_get` under the hood.
-
-!!! note
-    This is technically type piracy, but neither Onda nor AWSS3 makes sense to 
-    house this method so until such a package exists, here it shall remain.
-"""
-function Onda.read_byte_range(path::S3Path, byte_offset, byte_count)
-    # s3_get byte_range is 1-indexed, so we need to add one
-    byte_range = range(byte_offset + 1; length=byte_count)
-    return read(path; byte_range)
-end
-
-# avoid method ambiguity
-function Onda.read_byte_range(path::S3Path, ::Missing, ::Missing)
-    return read(path)
-end
-
 # glue together a bunch of N-d arrays on the N+1th dimension; used to create
 # N+1-dim tensors during batch materialization
 function _glue(stuff)
@@ -144,7 +123,7 @@ end
 #
 # this is contributed upstream but it may be ... some time before it's usable
 # here so in the mean time...
-# 
+#
 # https://github.com/JuliaLang/julia/pull/48238
 _wait(p::AbstractWorkerPool) = wait(p.channel)
 
@@ -161,7 +140,7 @@ function _wait(pool::WorkerPool)
     # so in order to wait on a worker, we have to first determine whether our
     # copy of the pool is the "real" one
     if pool.ref.where != myid()
-        # this is the "remote" branch, so we remotecall `wait` on 
+        # this is the "remote" branch, so we remotecall `wait` on
         return remotecall_fetch(ref -> wait(fetch(ref).value.channel),
                                 pool.ref.where,
                                 pool.ref)::Nothing
