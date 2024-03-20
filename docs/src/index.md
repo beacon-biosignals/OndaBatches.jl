@@ -2,17 +2,21 @@
 CurrentModule = OndaBatches
 ```
 
-# API
+Watch our [JuliaCon2023 talk on
+OndaBatches.jl](https://www.youtube.com/live/FIeO1yenQ6Y?feature=share&t=23190)!
+[Slides](https://beacon-biosignals.github.io/OndaBatches.jl/juliacon2023/)
+(and [source + demo](https://github.com/beacon-biosignals/OndaBatches.jl/tree/main/talk/))
 
-## Batching service
+# Public API
+
+## Labeled signals
 
 ```@docs
-Batcher
-Batcher(::Int, ::AbstractWorkerPool, ::Any; start::Any, state::Any, buffer::Any)
-Base.take!(::Batcher, state)
-start!
-stop!
-get_status
+LabeledSignalV2
+sub_label_span
+label_signals
+load_labeled_signal
+store_labels
 ```
 
 ## Batch sampling
@@ -32,14 +36,15 @@ materialize_batch
 get_channel_data
 ```
 
-## Labeled signals
+## Batching service
 
 ```@docs
-LabeledSignalV2
-sub_label_span
-label_signals
-load_labeled_signal
-store_labels
+Batcher
+Batcher(::Int, ::AbstractWorkerPool, ::Any; start::Any, state::Any, buffer::Any)
+Base.take!(::Batcher, state)
+start!
+stop!
+get_status
 ```
 
 ## Internal utilities

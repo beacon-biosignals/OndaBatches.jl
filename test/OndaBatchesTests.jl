@@ -69,15 +69,6 @@ const labeled_signals = label_signals(uncompressed_signals,
 
 const N_WORKERS = 3
 
-function AWSS3._s3_exists_dir(aws::AWSS3.AbstractAWSConfig, bucket, path)
-    a = chop(string(path)) * "."
-    q = Dict("delimiter" => "", "max-keys" => 1, "start-after" => a, "prefix" => path)
-    l = parse(AWSS3.S3.list_objects_v2(bucket, q; aws_config=aws))
-    c = get(l, "Contents", nothing)
-    c === nothing && return false
-    return startswith(get(c, "Key", ""), path)
-end
-
 # for testing get_channel_data
 struct EvenOdds end
 function OndaBatches.get_channel_data(samples::Samples, channels::EvenOdds)
@@ -91,14 +82,10 @@ struct ZeroMissingChannels
     channels::Vector{String}
 end
 function OndaBatches.get_channel_data(samples::Samples, channels::ZeroMissingChannels)
-    out = zeros(eltype(samples.data),
-                length(channels.channels),
-                size(samples.data, 2))
+    out = zeros(eltype(samples.data), length(channels.channels), size(samples.data, 2))
     for (i, c) in enumerate(channels.channels)
         if c ∈ samples.info.channels
-            # XXX: this is extraordinarly inefficient and makes lots of copies,
-            # it's just here for demonstration
-            out[i, :] .= samples[c, :].data[1, :]
+            @views out[i:i, :] .= samples[c, :].data
         end
     end
     return out

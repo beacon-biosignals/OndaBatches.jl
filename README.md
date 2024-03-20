@@ -12,3 +12,10 @@ In particular, it defines utilites to:
 - ...associate existing labels to the corresponding signals to create a hollistic dataset.
 - ...systematically construct batches of training / evaluation data from this dataset while being flexible enough in our sampling mechanism so that we can tailor the properties of the outputs.
 - ...initiate a batching mechanism, carefully controlled by a scheduler, when working in a distributed environment.
+
+### JuliaCon 2023
+
+Watch our [JuliaCon2023 talk on
+OndaBatches.jl](https://www.youtube.com/live/FIeO1yenQ6Y?feature=share&t=23190)!
+[Slides](https://beacon-biosignals.github.io/OndaBatches.jl/juliacon2023/)
+(and [source + demo](https://github.com/beacon-biosignals/OndaBatches.jl/tree/main/talk/))

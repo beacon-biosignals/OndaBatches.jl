@@ -101,6 +101,25 @@ unwrap(e::CapturedException) = unwrap(e.ex)
         pool = multibatcher.workers
         @test length(pool) == count_ready_workers(pool) == length(worker_ids) - 1
 
+        @testset "local manager doesn't mutate init state" begin
+            b1 = Batcher(myid(), worker_ids[2:2], batches; start=false)
+            b2 = Batcher(worker_ids[1], worker_ids[2:2], batches; start=false)
+
+            init_state = StableRNG(1)
+
+            start!(b1, init_state)
+            start!(b2, init_state)
+
+            x1, s1 = take!(b1, init_state)
+            x2, s2 = take!(b2, init_state)
+
+            @test x1 == x2
+            @test s1 == s2 != init_state
+
+            # not mutated
+            @test init_state == StableRNG(1)
+        end
+
         @testset "start with empty worker pool" begin
             manager, rest = Iterators.peel(worker_ids)
             workers = WorkerPool(collect(rest))

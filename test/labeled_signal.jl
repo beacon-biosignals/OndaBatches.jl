@@ -381,6 +381,18 @@
                                                          Second(10)))
                           for label in labels]
 
+        @testset "loaded samples eltype" begin
+            x, _ = load_labeled_signal(labeled_signal)
+            x64, _ = load_labeled_signal(labeled_signal, Float64)
+
+            @test x == x64
+            @test eltype(x.data) == eltype(x64.data) == Float64
+
+            x32, _ = load_labeled_signal(labeled_signal, Float32)
+            @test eltype(x32.data) == Float32
+            @test x32.data ≈ x.data
+        end
+
         @testset "aligned to start of recording" begin
             @test labeled_signal.span == labeled_signal.label_span
             samples_rt, _ = load_labeled_signal(labeled_signal)

@@ -65,7 +65,7 @@ function store_labels(labeled_signal::LabeledSignalV2, root; format="lpcm")
 end
 
 """
-    function load_labeled_signal(labeled_signal)
+    function load_labeled_signal(labeled_signal, samples_eltype::Type=Float64)
 
 Load signal data as `Onda.Samples` from a labeled segment of an `Onda.SignalV2` (i.e.,
 a [`LabeledSignalV2`](@ref) or row with schema `"labeled.signal@2"`), and
@@ -75,9 +75,23 @@ along with the corresponding labels (as another `Onda.Samples` object).
 If possible, this will only retrieve the bytes corresponding to
 `labeled_signal.label_span`.
 
+The `eltype` of the returned `Samples` is `samples_eltype`, which defaults to
+`Float64`.
+
+!!! note
+
+    The handling of samples `eltype` is different than `Onda.load`, for which
+    the `eltype` depends on the resolution/offset specified in the samples info:
+    when they are 1/0 respectively, the underlying encoded data is _always_
+    returned exactly as-is, even if the type differs from the requested
+    `eltype`.  This allows for some optimizations in such cases, but is a
+    potential footgun when a particular `eltype` is actually required.  We work
+    around this inconsistency here by always allocating a _new_ array with the
+    requested `eltype` to hold the decoded samples.
+
 Returns a `samples, labels` tuple.
 """
-function load_labeled_signal(labeled_signal)
+function load_labeled_signal(labeled_signal, ::Type{T}=Float64) where {T}
     # TODO: handle this with a type restriction/validation by construction?
     # Legolas.validate((labeled_signal, ), Legolas.Schema("labeled.signal@2"))
     # (; labels, label_span, span) = labeled_signal
@@ -102,7 +116,14 @@ function load_labeled_signal(labeled_signal)
     aligned = AlignedSpan(sample_rate,
                           label_span_relative_to_samples,
                           ConstantSamplesRoundingMode(RoundDown))
-    samples = Onda.load(labeled_signal, aligned)
+
+    # load samples encoded, and then decode them to our desired eltype
+    samples = Onda.load(labeled_signal, aligned; encoded=true)
+    # why this juggling?  well, if the resolution/offset of samples is 1/0
+    # respectively, then `decode` is a no-op, EVEN IF `T !=
+    # eltype(samples.data)`.  By providing the storage array to `decode!`, we
+    # force conversion to T.
+    samples = Onda.decode!(similar(samples.data, T), samples)
 
     # return labels as-is if they are Samples, and load/index appropriately if
     # they are a Lazy Signal
@@ -135,15 +156,23 @@ function get_labels(labels::SignalV2, span_relative_to_recording)
 end
 
 """
-    label_signals(signals, annotations; groups=:recording, kwargs...)
+    label_signals(signals, annotations;
+                    groups=:recording,
+                    labels_column,
+                    epoch,
+                    encoding,
+                    roundto=nothing)
 
 Create a "labeled signals" table from a signals table and a table of annotations
 containing labels.
 
-Annotations will be passed to [`labels_to_samples_table`](@ref) and additional
-kwargs are forwarded there as well.  Default values there are
-- `labels_column` the column in the annotations table with labels,
-- `epoch` the sampling period of the labels
+Annotations will be passed to [`labels_to_samples_table`](@ref), as well as 
+kwargs.  `labels_to_samples_table` requires these keyword arguments:
+- `groups`: the column to group over, defaults to `:recording`.
+- `labels_column`: the column in the annotations table containing the labels.
+- `epoch`: the sampling period of the labels.
+- `encoding::Dict`: the label -> `UInt8` mapping to use for encoding the labels.
+- `roundto`: controls rounding of "shaggy spans", defaults to `nothing` for no rounding.
 
 Annotations must be
 - contiguous and non-overlapping (withing `groups`)
@@ -158,8 +187,18 @@ data represented by the _signal_.
 If any label span is not entirely contained within the corresponding signal
 span, this will throw an ArgumentError.
 """
-function label_signals(signals, annotations; groups=:recording, kwargs...)
-    labels_table = labels_to_samples_table(annotations; groups, kwargs...)
+function label_signals(signals, annotations;
+                       groups=:recording,
+                       labels_column,
+                       epoch,
+                       encoding,
+                       roundto=nothing)
+    labels_table = labels_to_samples_table(annotations;
+                                           groups,
+                                           labels_column,
+                                           epoch,
+                                           encoding,
+                                           roundto)
     joined = leftjoin(DataFrame(signals), labels_table; on=groups)
     if any(ismissing, joined.labels)
         missings = select(filter(:labels => ismissing, joined), groups)
