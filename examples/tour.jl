@@ -57,7 +57,7 @@ annotations = DataFrame(Legolas.read(stages_path))
 # LabeledSignalV2 extends the SignalV2 schema to incorporate the labels of a given signal,
 # which are represented as either another onda.signal or onda.sample, by marrying the
 # underling signals and annotations across overlapping time spans.
-# Note that the labels must be dense, contiguous and span the entire Signal.
+# Note that the labels must be dense and contiguous.
 # This constraint is a legacy of the origns of this code and may not be applicable to all
 # use-cases.
 
